@@ -79,10 +79,6 @@
             "Microsoft.TeamFoundationServer.Client": {
               "target": "Package",
               "version": "[16.153.0, )"
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[4.7.2, )"
             }
           },
           "imports": [

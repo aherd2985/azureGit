@@ -1,8 +1,6 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -15,12 +13,11 @@ namespace AzureGitAPI
 {
   class Program
   {
-    const String c_collectionUri = "https://dev.azure.com/";
+    const string c_collectionUri = "https://dev.azure.com/";
     static void Main(string[] args)
     {
       IServiceProvider services = ServiceProviderBuilder.GetServiceProvider(args);
       IOptions<APIKeys> options = services.GetRequiredService<IOptions<APIKeys>>();
-      Console.WriteLine("Hello World!");
 
       //use the httpclient
       VssCredentials creds = new VssBasicCredential(string.Empty, options.Value.PAT);
@@ -46,8 +43,6 @@ namespace AzureGitAPI
           Console.WriteLine(p.Name);
           Console.WriteLine(pullsLastWeek.Count().ToString());
 
-
-
           foreach (GitPullRequest pull in pullsLastWeek)
           {
             List<GitCommitRef> commits = gitClient.GetPullRequestCommitsAsync(pull.Repository.Id, pull.PullRequestId).Result;
@@ -65,11 +60,7 @@ namespace AzureGitAPI
 
       }
 
-
-
-      }
-
-
+    }
 
   }
 }
