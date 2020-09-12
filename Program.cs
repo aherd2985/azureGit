@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
+using AzureGitAPI.Art;
 
 namespace AzureGitAPI
 {
@@ -18,47 +19,62 @@ namespace AzureGitAPI
     {
       IServiceProvider services = ServiceProviderBuilder.GetServiceProvider(args);
       IOptions<APIKeys> options = services.GetRequiredService<IOptions<APIKeys>>();
+      asciiArtClass asciiArt = new asciiArtClass();
+
+      Console.ForegroundColor = ConsoleColor.Cyan;
+      Console.WriteLine("\n\n");
+      foreach (string line in asciiArt.azureArtArr)
+        Console.WriteLine(line);
 
       //use the httpclient
       VssCredentials creds = new VssBasicCredential(string.Empty, options.Value.PAT);
 
       // Connect to Azure DevOps Services
+      Console.ForegroundColor = ConsoleColor.Green;
+      Console.WriteLine("\nConnecting...");
       VssConnection connection = new VssConnection(new Uri(c_collectionUri + options.Value.OrgName), creds);
 
-      var workItemTracking = connection.GetClient<WorkItemTrackingHttpClient>();
+      WorkItemTrackingHttpClient workItemTracking = connection.GetClient<WorkItemTrackingHttpClient>();
 
-      Microsoft.TeamFoundation.Core.WebApi.ProjectHttpClient projClient = connection.GetClientAsync<Microsoft.TeamFoundation.Core.WebApi.ProjectHttpClient>().Result;
-      var projects = projClient.GetProjects().Result;
-      DateTime minCompletedDate = DateTime.Now.AddDays(-10);
+      ProjectHttpClient projClient = connection.GetClientAsync<ProjectHttpClient>().Result;
+      IPagedList<TeamProjectReference> projects = projClient.GetProjects().Result;
+
       // Get a GitHttpClient to talk to the Git endpoints
       using (GitHttpClient gitClient = connection.GetClient<GitHttpClient>())
       {
         foreach (TeamProjectReference p in projects)
         {
-          GitPullRequestSearchCriteria searches = new GitPullRequestSearchCriteria();
-          searches.Status = PullRequestStatus.Completed;
-          List<GitPullRequest> pulls = gitClient.GetPullRequestsByProjectAsync(p.Name, searches).Result;
+          Console.WriteLine("\n\nProject --- " + p.Name);
+          List<GitRepository> repoList = gitClient.GetRepositoriesAsync(p.Name).Result;
 
-          List<GitPullRequest> pullsLastWeek = pulls.Where(x => x.ClosedDate >= minCompletedDate).ToList<GitPullRequest>();
-          Console.WriteLine(p.Name);
-          Console.WriteLine(pullsLastWeek.Count().ToString());
+          GitRepository masterRepo = repoList.Where(x => x.Name == "master" || x.Name == p.Name).FirstOrDefault();
+          Console.WriteLine("Repo Name --- " + masterRepo.Name);
 
-          foreach (GitPullRequest pull in pullsLastWeek)
+          //set a filter to only return commits within the last 16 days
+          GitQueryCommitsCriteria searches = new GitQueryCommitsCriteria();
+          searches.FromDate = DateTime.Now.AddDays(-3).ToShortDateString();
+          
+          List<GitCommitRef> commits = gitClient.GetCommitsBatchAsync(searches, masterRepo.Id).Result;
+
+          foreach (GitCommitRef cmt in commits)
           {
-            List<GitCommitRef> commits = gitClient.GetPullRequestCommitsAsync(pull.Repository.Id, pull.PullRequestId).Result;
+            Console.WriteLine("\n\nProject --- " + p.Name);
+            Console.WriteLine("Repo Name --- " + masterRepo.Name);
+            Console.WriteLine("\nCommit ID - #{0}\nBy - {1}\nEmail - {2}\nOn - {3}", cmt.CommitId, cmt.Author.Name, cmt.Author.Email, cmt.Author.Date.ToLongDateString(), cmt.Comment);
+            GitCommitChanges changes = gitClient.GetChangesAsync(p.Name, cmt.CommitId, p.Name).Result;
 
-            foreach (GitCommitRef commit in commits)
+            foreach (GitChange change in changes.Changes)
             {
-              Console.WriteLine("{0} - {1} - {2}", commit.CommitId.Substring(0, 8), commit.Comment, commit.Author);
-              GitCommitChanges changes = gitClient.GetChangesAsync(p.Name, commit.CommitId, p.Name).Result;
-
-              foreach (var change in changes.Changes)
-                Console.WriteLine("{0}: {1}", change.ChangeType, change.Item.Path);
+              Console.WriteLine("{0}: {1}", change.ChangeType, change.Item.Path);
             }
           }
         }
-
       }
+
+      Console.ForegroundColor = ConsoleColor.Blue;
+      Console.WriteLine("\n\n");
+      foreach (string line in asciiArt.tieFArtArr)
+        Console.WriteLine(line);
 
     }
 
