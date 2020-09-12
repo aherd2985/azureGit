@@ -50,9 +50,9 @@ namespace AzureGitAPI
           GitRepository masterRepo = repoList.Where(x => x.Name == "master" || x.Name == p.Name).FirstOrDefault();
           Console.WriteLine("Repo Name --- " + masterRepo.Name);
 
-          //set a filter to only return commits within the last 16 days
+          //set a filter to only return commits within the last 7 days
           GitQueryCommitsCriteria searches = new GitQueryCommitsCriteria();
-          searches.FromDate = DateTime.Now.AddDays(-3).ToShortDateString();
+          searches.FromDate = DateTime.Now.AddDays(-7).ToShortDateString();
           
           List<GitCommitRef> commits = gitClient.GetCommitsBatchAsync(searches, masterRepo.Id).Result;
 
