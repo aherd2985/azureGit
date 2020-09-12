@@ -34,8 +34,6 @@ namespace AzureGitAPI
       Console.WriteLine("\nConnecting...");
       VssConnection connection = new VssConnection(new Uri(c_collectionUri + options.Value.OrgName), creds);
 
-      WorkItemTrackingHttpClient workItemTracking = connection.GetClient<WorkItemTrackingHttpClient>();
-
       ProjectHttpClient projClient = connection.GetClientAsync<ProjectHttpClient>().Result;
       IPagedList<TeamProjectReference> projects = projClient.GetProjects().Result;
 
@@ -63,6 +61,7 @@ namespace AzureGitAPI
             Console.WriteLine("\nCommit ID - #{0}\nBy - {1}\nEmail - {2}\nOn - {3}", cmt.CommitId, cmt.Author.Name, cmt.Author.Email, cmt.Author.Date.ToLongDateString(), cmt.Comment);
             GitCommitChanges changes = gitClient.GetChangesAsync(p.Name, cmt.CommitId, p.Name).Result;
 
+            Console.WriteLine("Files:");
             foreach (GitChange change in changes.Changes)
             {
               Console.WriteLine("{0}: {1}", change.ChangeType, change.Item.Path);
